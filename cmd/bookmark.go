@@ -2,14 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/WesleyT4N/quick-open/internal/bookmarks"
 	"github.com/urfave/cli/v2"
 )
 
-var BookmarkFilePath = filepath.Join(os.Getenv("HOME"), "/.config/quick-open/bookmarks.json")
+var BookmarkFilePath = filepath.Join(ConfigDir, "bookmarks.json")
 
 func OpenBookmark(c *cli.Context, query string) error {
 	bm, err := bookmarks.LoadBookmarkManager(BookmarkFilePath)
