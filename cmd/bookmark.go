@@ -10,24 +10,6 @@ import (
 
 var BookmarkFilePath = filepath.Join(ConfigDir, "bookmarks.json")
 
-func OpenBookmark(c *cli.Context, query string) error {
-	bm, err := bookmarks.LoadBookmarkManager(BookmarkFilePath)
-	if err != nil {
-		return cli.Exit("Failed to load bookmarks: "+err.Error(), 1)
-	}
-
-	b, err := bm.FindBookmark(query)
-	if err != nil {
-		return cli.Exit("Bookmark not found: "+err.Error(), 1)
-	}
-
-	fmt.Printf("Opening bookmark: %s (%s) in your browser...", b.Title, b.URL)
-	if err = b.Open(); err != nil {
-		return cli.Exit("Error: "+err.Error(), 1)
-	}
-	return nil
-}
-
 var BookmarkCmd = &cli.Command{
 	Name:    "bookmark",
 	Aliases: []string{"bm"},
@@ -116,4 +98,22 @@ var BookmarkCmd = &cli.Command{
 			},
 		},
 	},
+}
+
+func OpenBookmark(c *cli.Context, query string) error {
+	bm, err := bookmarks.LoadBookmarkManager(BookmarkFilePath)
+	if err != nil {
+		return cli.Exit("Failed to load bookmarks: "+err.Error(), 1)
+	}
+
+	b, err := bm.FindBookmark(query)
+	if err != nil {
+		return cli.Exit("Bookmark not found: "+err.Error(), 1)
+	}
+
+	fmt.Printf("Opening bookmark: %s (%s) in your browser...\n", b.Title, b.URL)
+	if err = b.Open(); err != nil {
+		return cli.Exit("Error: "+err.Error(), 1)
+	}
+	return nil
 }
