@@ -11,6 +11,24 @@ import (
 
 var BookmarkFilePath = filepath.Join(os.Getenv("HOME"), "/.config/quick-open/bookmarks.json")
 
+func OpenBookmark(c *cli.Context, query string) error {
+	bm, err := bookmarks.LoadBookmarkManager(BookmarkFilePath)
+	if err != nil {
+		return cli.Exit("Failed to load bookmarks: "+err.Error(), 1)
+	}
+
+	b, err := bm.FindBookmark(query)
+	if err != nil {
+		return cli.Exit("Bookmark not found: "+err.Error(), 1)
+	}
+
+	fmt.Printf("Opening bookmark: %s (%s) in your browser...", b.Title, b.URL)
+	if err = b.Open(); err != nil {
+		return cli.Exit("Error: "+err.Error(), 1)
+	}
+	return nil
+}
+
 var BookmarkCmd = &cli.Command{
 	Name:    "bookmark",
 	Aliases: []string{"bm"},
@@ -61,10 +79,27 @@ var BookmarkCmd = &cli.Command{
 			},
 		},
 		{
-			Name:    "remove",
-			Aliases: []string{"rm"},
-			Usage:   "Remove a bookmark",
+			Name:      "remove",
+			Aliases:   []string{"rm"},
+			Usage:     "Remove a bookmark",
+			ArgsUsage: "<title | url | alias>",
 			Action: func(c *cli.Context) error {
+				if c.NArg() != 1 {
+					cli.ShowSubcommandHelpAndExit(c, 1)
+				}
+				bm, err := bookmarks.LoadBookmarkManager(BookmarkFilePath)
+				if err != nil {
+					return cli.Exit("Failed to load bookmarks: "+err.Error(), 1)
+				}
+				query := c.Args().Get(0)
+				removed, err := bm.RemoveBookmark(query)
+				if err != nil {
+					return cli.Exit("Bookmark not found: "+err.Error(), 1)
+				}
+				if err := bm.Save(BookmarkFilePath); err != nil {
+					return cli.Exit("Failed to save bookmarks: "+err.Error(), 1)
+				}
+				fmt.Printf("Bookmark removed: %s (%s)\n", removed.Title, removed.URL)
 				return nil
 			},
 		},
@@ -77,23 +112,8 @@ var BookmarkCmd = &cli.Command{
 				if c.NArg() != 1 {
 					cli.ShowSubcommandHelpAndExit(c, 1)
 				}
-
-				bm, err := bookmarks.LoadBookmarkManager(BookmarkFilePath)
-				if err != nil {
-					return cli.Exit("Failed to load bookmarks: "+err.Error(), 1)
-				}
-
 				query := c.Args().Get(0)
-				b, err := bm.FindBookmark(query)
-				if err != nil {
-					return cli.Exit("Bookmark not found: "+err.Error(), 1)
-				}
-
-				fmt.Printf("Opening bookmark: %s (%s) in your browser...", b.Title, b.URL)
-				if err = b.Open(); err != nil {
-					return cli.Exit("Error: "+err.Error(), 1)
-				}
-				return nil
+				return OpenBookmark(c, query)
 			},
 		},
 	},

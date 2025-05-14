@@ -97,28 +97,56 @@ func (b *BookmarkManager) List() {
 	}
 }
 
+func (b *BookmarkManager) bookmarksByTitle() map[string]Bookmark {
+	bookmarksByTitle := map[string]Bookmark{}
+	for _, bookmark := range b.Bookmarks {
+		bookmarksByTitle[bookmark.Title] = bookmark
+	}
+	return bookmarksByTitle
+}
+
+func (b *BookmarkManager) bookmarksByURL() map[string]Bookmark {
+	bookmarksByURL := map[string]Bookmark{}
+	for _, bookmark := range b.Bookmarks {
+		bookmarksByURL[bookmark.URL] = bookmark
+	}
+	return bookmarksByURL
+}
+
 func (b *BookmarkManager) AddBookmark(title, urlStr, alias string) (*Bookmark, error) {
 	parsedURL, err := url.Parse(path.Clean(urlStr))
 	if err != nil {
 		return nil, fmt.Errorf("invalid URL")
 	}
+	urlStr = parsedURL.String()
+
+	bookmarksByTitle := b.bookmarksByTitle()
+	if _, exists := bookmarksByTitle[title]; exists {
+		return nil, fmt.Errorf("bookmark with title '%s' already exists", title)
+	}
+	bookmarksByURL := b.bookmarksByURL()
+	if _, exists := bookmarksByURL[urlStr]; exists {
+		return nil, fmt.Errorf("bookmark with URL '%s' already exists", urlStr)
+	}
+
 	newBookmark := Bookmark{
 		Title: title,
-		URL:   parsedURL.String(),
+		URL:   urlStr,
 		Alias: alias,
 	}
 	b.Bookmarks = append(b.Bookmarks, newBookmark)
 	return &newBookmark, nil
 }
 
-func (b *BookmarkManager) RemoveBookmark(title, urlStr, alias string) error {
+func (b *BookmarkManager) RemoveBookmark(query string) (*Bookmark, error) {
 	for i, bookmark := range b.Bookmarks {
-		if bookmark.Title == title || bookmark.URL == urlStr || bookmark.Alias == alias {
+		if bookmark.Title == query || bookmark.URL == query || bookmark.Alias == query {
+			removed := &bookmark
 			b.Bookmarks = slices.Delete(b.Bookmarks, i, i+1)
-			return nil
+			return removed, nil
 		}
 	}
-	return fmt.Errorf("bookmark not found")
+	return nil, fmt.Errorf("bookmark not found")
 }
 
 func (b *BookmarkManager) FindBookmark(query string) (*Bookmark, error) {
