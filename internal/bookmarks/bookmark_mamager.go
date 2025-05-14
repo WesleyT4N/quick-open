@@ -57,9 +57,16 @@ func (b *BookmarkManager) Save(filePath string) error {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer file.Close()
-	if err := json.NewEncoder(file).Encode(b); err != nil {
-		return fmt.Errorf("failed to encode JSON: %w", err)
+
+	jsonData, err := json.MarshalIndent(b, "", "  ")
+	if err != nil {
+		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
+
+	if _, err := file.Write(jsonData); err != nil {
+		return fmt.Errorf("failed to write JSON to file: %w", err)
+	}
+
 	if err := file.Sync(); err != nil {
 		return fmt.Errorf("failed to sync file: %w", err)
 	}
